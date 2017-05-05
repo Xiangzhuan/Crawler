@@ -76,7 +76,7 @@ public class HttpClientUtil {
 	
 	//配置ssl。连接池。重试策略等
 	private static void init() {
-		 try {
+		try {
 	            SSLContext sslContext =
 	                    SSLContexts.custom()
 	                            .loadTrustMaterial(KeyStore.getInstance(KeyStore.getDefaultType()), new TrustStrategy() {
@@ -324,6 +324,7 @@ public class HttpClientUtil {
 		request.setEntity(entity);
 	}
 	
+	//设置代理请求参数
 	public static Builder getRequestConfigBuilder(){
 		return RequestConfig.custom().setSocketTimeout(Constants.TIMEOUT).
 				setConnectTimeout(Constants.TIMEOUT).

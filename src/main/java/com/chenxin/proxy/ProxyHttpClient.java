@@ -14,7 +14,10 @@ import com.chenxin.core.util.Config;
 import com.chenxin.core.util.Constants;
 import com.chenxin.core.util.HttpClientUtil;
 import com.chenxin.core.util.SimpleThreadPoolExecutor;
+import com.chenxin.core.util.ThreadPoolMonitor;
 import com.chenxin.proxy.entity.Proxy;
+import com.chenxin.proxy.task.ProxyPageTask;
+import com.chenxin.proxy.task.ProxySerializeTask;
 import com.chenxin.spider.entity.Page;
 
 public class ProxyHttpClient extends AbstractHttpclient {
@@ -24,7 +27,7 @@ public class ProxyHttpClient extends AbstractHttpclient {
 
 	private volatile static ProxyHttpClient instance;
 
-	private static Set<Page> downloadFailureProxyPageSet = new HashSet<Page>();
+	public static Set<Page> downloadFailureProxyPageSet = new HashSet<Page>(ProxyPool.proxyMap.size());
 
 	/**
 	 * 单例构造
@@ -83,6 +86,7 @@ public class ProxyHttpClient extends AbstractHttpclient {
 			}
 			logger.info("反序列化成功，"+proxyArray.length+"个代理，可用代理"+usableProxyCount+"个");
 		} catch (Exception e) {
+			logger.warn("反序列化proxy失败");
 			e.printStackTrace();
 		}
 	}
@@ -101,9 +105,16 @@ public class ProxyHttpClient extends AbstractHttpclient {
                 new LinkedBlockingQueue<Runnable>(), "" +
                 "proxyDownloadThreadExecutor");
 		//两个线程池监视工具 TODO
+	      new Thread(new ThreadPoolMonitor(proxyTestThreadExecutor, "ProxyTestThreadPool")).start();
+	     new Thread(new ThreadPoolMonitor(proxyDownloadThreadExecutor, "ProxyDownloadThreadExecutor")).start();
+	    
 	}
 	
+	/**
+	 * 抓取代理
+	 */
 	public void startCrawl(){
+		System.out.println("sssssssssssssssssss");
 		new Thread(new Runnable() {
 			
 			@Override
@@ -113,11 +124,22 @@ public class ProxyHttpClient extends AbstractHttpclient {
 						/**
 						 * 首次本机直接下载代理页面
 						 */
-						//proxyDownloadThreadExecutor.execute(command);
+						proxyDownloadThreadExecutor.execute(new ProxyPageTask(url, false));
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+					try {
+						Thread.sleep(1000*60*60);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
 					}
 				}
 			}
 		}).start();
+		new Thread(new ProxySerializeTask()).start();
 	}
 
 	public ThreadPoolExecutor getProxyTestThreadExecutor() {

@@ -18,10 +18,12 @@ import com.chenxin.proxy.ProxyPool;
 import com.chenxin.proxy.entity.Direct;
 import com.chenxin.proxy.entity.Proxy;
 import com.chenxin.proxy.site.ProxyListPageParserFactory;
+import com.chenxin.spider.ZhiHuHttpClient;
 import com.chenxin.spider.entity.Page;
 
 /**
  * 下载代理网页并解析
+ * 若下载失败，通过代理去下载代理网页
  * @author j
  *
  */
@@ -61,7 +63,7 @@ public class ProxyPageTask implements Runnable{
 			page.setProxy(currentProxy);
 			int status = page.getStatusCode();
 			long requestEndTime = System.currentTimeMillis();
-			String logStr = Thread.currentThread().getName() + " " + getProxyStr(currentProxy) +
+			String logStr =Thread.currentThread().getName() + " " + getProxyStr(currentProxy) +
 					"  executing request " + page.getUrl()  + " response statusCode:" + status +
 					"  request cost time:" + (requestEndTime - requestStartTime) + "ms";
 			if(status == HttpStatus.SC_OK){
@@ -78,6 +80,7 @@ public class ProxyPageTask implements Runnable{
 			retry();
 		} finally {
 			if(currentProxy != null){
+				//重新加载时间
 				currentProxy.setTimeInterval(Constants.TIME_INTERVAL);
 				ProxyPool.proxyQueue.add(currentProxy);
 			}
@@ -101,11 +104,11 @@ public class ProxyPageTask implements Runnable{
 		ProxyListPageParser parser = ProxyListPageParserFactory.getProxyListPageParser(ProxyPool.proxyMap.get(url));
 		List<Proxy> proxyList = parser.parse(page.getHtml());
 		for(Proxy p : proxyList){
-			/*if(!ZhiHuHttpClient.getInstance().getDetailListPageThreadPool().isTerminated()){
+			if(!ZhiHuHttpClient.getInstance().getDetailListPageThreadPool().isTerminated()){
 				if (!ProxyPool.proxySet.contains(p.getProxyStr())){
 					proxyHttpClient.getProxyTestThreadExecutor().execute(new ProxyTestTask(p));
 				}
-			}*/
+			}
 		}
 	}
 	//日志格式

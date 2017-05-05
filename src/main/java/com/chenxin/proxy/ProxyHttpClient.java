@@ -114,7 +114,6 @@ public class ProxyHttpClient extends AbstractHttpclient {
 	 * 抓取代理
 	 */
 	public void startCrawl(){
-		System.out.println("sssssssssssssssssss");
 		new Thread(new Runnable() {
 			
 			@Override

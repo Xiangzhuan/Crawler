@@ -212,10 +212,11 @@ public class HttpClientUtil {
 		HttpClientContext httpClientContext = HttpClientContext.create();
 		httpClientContext.setCookieStore(cookieStore);
 		CloseableHttpResponse response = httpClient.execute(request, httpClientContext);
-//		int statusCode = response.getStatusLine().getStatusCode();
-//		if(statusCode != 200){
-//			throw new IOException("status code is:" + statusCode);
-		return response;
+		int statusCode = response.getStatusLine().getStatusCode();
+		//if(statusCode != 200){
+		//	throw new IOException("status code is:" + statusCode);
+		//}
+			return response;
 	}
 	
 	/**

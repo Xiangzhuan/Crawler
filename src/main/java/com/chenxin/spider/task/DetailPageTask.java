@@ -1,6 +1,7 @@
 package com.chenxin.spider.task;
 
 
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 
@@ -39,24 +40,23 @@ public class DetailPageTask extends AbstractPageTask {
 	@Override
 	void handle(Page page) {
 		DetailPageParser parser = null;
-		// parser = ZhiHuNewUserDetailPageParser.getInstance();
-		parser = proxyDetailPageParser;
-		User u = parser.parseDetailPage(page);
-		logger.info("解析用户成功:" + u.toString());
-		if (Config.dbEnable) {
-			// ZhiHuDAO.insertUser(u);
-			// zhiHuDao1.insertUser(u);
-		}
-		zhiHuHttpClient.parseUserCount.incrementAndGet();
-		for (int i = 0; i < u.getFollowees() / 20 + 1; i++) {
-			String userFolloweesUrl = formatUserFolloweesUrl(u.getUserToken(),
-					20 * i);
-			handleUrl(userFolloweesUrl);
-		}
+//      parser = ZhiHuNewUserDetailPageParser.getInstance();
+      parser = proxyDetailPageParser;
+      User u = parser.parseDetailPage(page);
+      logger.info("解析用户成功:" + u.toString());
+      if(Config.dbEnable){
+//          ZhiHuDAO.insertUser(u);
+  //        zhiHuDao1.insertUser(u);
+      }
+      zhiHuHttpClient.parseUserCount.incrementAndGet();
+      for(int i = 0;i < u.getFollowees() / 20 + 1;i++) {
+          String userFolloweesUrl = formatUserFolloweesUrl(u.getUserToken(), 20 * i);
+          handleUrl(userFolloweesUrl);
+      }
 	}
 
 	private void handleUrl(String userFolloweesUrl) {
-		HttpGet request = new HttpGet(url);
+		HttpGet request = new HttpGet(userFolloweesUrl);
         request.setHeader("authorization", "oauth " + ZhiHuHttpClient.getAuthorization());
         if(!Config.dbEnable){
             zhiHuHttpClient.getListPageThreadPool().execute(new ListPageTask(request, Config.isProxy));
@@ -77,7 +77,7 @@ public class DetailPageTask extends AbstractPageTask {
      * @return
      */
     private static DetailPageParser getProxyDetailParser(){
-        DetailPageParser detailPageParser = ZhiHuNewUserDetailPageParser.getInstance();
+    	DetailPageParser detailPageParser = ZhiHuNewUserDetailPageParser.getInstance();
         InvocationHandler invocationHandler = new SimpleInvocationHandler(detailPageParser);
         DetailPageParser proxyDetailPageParser = (DetailPageParser) Proxy.newProxyInstance(detailPageParser.getClass().getClassLoader(),
                 detailPageParser.getClass().getInterfaces(), invocationHandler);

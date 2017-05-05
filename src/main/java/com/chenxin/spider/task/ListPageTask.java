@@ -8,7 +8,10 @@ import com.chenxin.core.util.Config;
 import com.chenxin.core.util.Constants;
 import com.chenxin.spider.entity.Page;
 import com.jayway.jsonpath.JsonPath;
-
+/**
+ * 知乎用户关注列表页task
+ * 下载成功解析出用户token，去重,构造用户详情url，获，添加到DetailPageDownloadThreadPool
+ */
 public class ListPageTask extends AbstractPageTask {
 	public ListPageTask(HttpRequestBase request, boolean proxyFlag) {
         super(request, proxyFlag);

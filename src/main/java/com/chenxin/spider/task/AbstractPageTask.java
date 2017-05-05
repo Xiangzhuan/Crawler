@@ -26,7 +26,7 @@ public abstract class AbstractPageTask implements Runnable {
 	private static Logger logger = Logger.getLogger(AbstractPageTask.class);
 	protected String url;
 	protected HttpRequestBase request;
-	private boolean proxyFlag;//是否通过代理下载
+	protected boolean proxyFlag;//是否通过代理下载
 	private Proxy currentProxy; //当前线程使用的代理
 	//protected static ZhiHuDao1 zhiHuDao1;
 	protected static ZhiHuHttpClient zhiHuHttpClient = ZhiHuHttpClient.getInstance();

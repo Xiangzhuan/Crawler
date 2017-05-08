@@ -11,6 +11,11 @@ import com.chenxin.core.util.Constants;
 import com.chenxin.proxy.ProxyListPageParser;
 import com.chenxin.proxy.entity.Proxy;
 
+/**
+ * 占时不能用了
+ * @author j
+ *
+ */
 public class MimiipProxyListPageParser implements ProxyListPageParser {
 	public List<Proxy> parse(String hmtl) {
 		Document document = Jsoup.parse(hmtl);

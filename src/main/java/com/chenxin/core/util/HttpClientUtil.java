@@ -76,7 +76,7 @@ public class HttpClientUtil {
 	
 	//配置ssl。连接池。重试策略等
 	private static void init() {
-		try {
+		 try {
 	            SSLContext sslContext =
 	                    SSLContexts.custom()
 	                            .loadTrustMaterial(KeyStore.getInstance(KeyStore.getDefaultType()), new TrustStrategy() {

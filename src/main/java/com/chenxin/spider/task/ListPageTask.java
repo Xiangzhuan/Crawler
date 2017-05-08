@@ -43,7 +43,7 @@ public class ListPageTask extends AbstractPageTask {
 	            return ;
 	        }
 //	        boolean existUserFlag = ZhiHuDAO.isExistUser(userToken);
-	       /* boolean existUserFlag = zhiHuDao1.isExistUser(userToken);
+//	        boolean existUserFlag = zhiHuDao1.isExistUser(userToken);
 	        while (zhiHuHttpClient.getDetailPageThreadPool().getQueue().size() > 1000){
 	            try {
 	                Thread.sleep(3000);
@@ -51,15 +51,18 @@ public class ListPageTask extends AbstractPageTask {
 	                e.printStackTrace();
 	            }
 	        }
-	        if(!existUserFlag || zhiHuHttpClient.getDetailPageThreadPool().getActiveCount() == 0){
-	            *//**
-	             * 防止互相等待，导致死锁
-	             *//*
+	    //    if(!existUserFlag || zhiHuHttpClient.getDetailPageThreadPool().getActiveCount() == 0){
+	          if(zhiHuHttpClient.getDetailPageThreadPool().getActiveCount()==0){
+	        	/**
+	        	 *  防止互相等待，导致死锁
+	        	 */
+	        	
 	            zhiHuHttpClient.getDetailPageThreadPool().execute(new DetailPageTask(url, Config.isProxy));
 
 	        }
-	}*/
+	}
+	
 		
 	}
 
-}
+

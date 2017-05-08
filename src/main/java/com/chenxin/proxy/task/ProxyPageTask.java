@@ -6,7 +6,6 @@ import java.util.List;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.log4j.Logger;
 
 import com.chenxin.core.util.Config;

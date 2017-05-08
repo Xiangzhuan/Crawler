@@ -7,7 +7,7 @@ import com.chenxin.spider.ZhiHuHttpClient;
 public class Main {
 	public static void main(String[] args) {
 		ProxyHttpClient.getInstance().startCrawl();
-		ZhiHuHttpClient.getInstance().startCrawl(Config.startURL);
+		//ZhiHuHttpClient.getInstance().startCrawl(Config.startURL);
 	}
 
 }

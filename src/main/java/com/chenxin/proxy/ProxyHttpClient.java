@@ -65,30 +65,28 @@ public class ProxyHttpClient extends AbstractHttpclient {
 	 */
 	private void initProxy() {
 		Proxy[] proxyArray = null;
-
-		try {
-			proxyArray = (Proxy[]) HttpClientUtil.deserializeObject(Config.proxyPath);
-			int usableProxyCount = 0;
-			for (Proxy p : proxyArray) {
-				if (p == null) {
-					continue;
-				}
-				p.setTimeInterval(Constants.TIME_INTERVAL);
-				p.setFailureTimes(0);
-				p.setSuccessfulTimes(0);
-				long nowTime = System.currentTimeMillis();
-				if (nowTime - p.getLastSuccessfulTime() < 1000 * 60 * 60) {
-					//上次成功离现在少于一小时
-					ProxyPool.proxyQueue.add(p);
-					ProxyPool.proxySet.add(p);
-					usableProxyCount++;
-				}
-			}
-			logger.info("反序列化成功，"+proxyArray.length+"个代理，可用代理"+usableProxyCount+"个");
-		} catch (Exception e) {
-			logger.warn("反序列化proxy失败");
-			e.printStackTrace();
-		}
+        try {
+            proxyArray = (Proxy[]) HttpClientUtil.deserializeObject(Config.proxyPath);
+            int usableProxyCount = 0;
+            for (Proxy p : proxyArray){
+                if (p == null){
+                    continue;
+                }
+                p.setTimeInterval(Constants.TIME_INTERVAL);
+                p.setFailureTimes(0);
+                p.setSuccessfulTimes(0);
+                long nowTime = System.currentTimeMillis();
+                if (nowTime - p.getLastSuccessfulTime() < 1000 * 60 *60){
+                    //上次成功离现在少于一小时
+                    ProxyPool.proxyQueue.add(p);
+                    ProxyPool.proxySet.add(p);
+                    usableProxyCount++;
+                }
+            }
+            logger.info("反序列化proxy成功，" + proxyArray.length + "个代理,可用代理" + usableProxyCount + "个");
+        } catch (Exception e) {
+            logger.warn("反序列化proxy失败");
+        }
 	}
 
 	/**

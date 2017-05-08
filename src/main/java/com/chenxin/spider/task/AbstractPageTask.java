@@ -1,6 +1,7 @@
 package com.chenxin.spider.task;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationHandler;
 
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
@@ -8,7 +9,10 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.log4j.Logger;
 
+import com.chenxin.core.util.Constants;
 import com.chenxin.core.util.HttpClientUtil;
+import com.chenxin.core.util.ProxyUtil;
+import com.chenxin.core.util.SimpleInvocationHandler;
 import com.chenxin.proxy.ProxyPool;
 import com.chenxin.proxy.entity.Direct;
 import com.chenxin.proxy.entity.Proxy;
@@ -21,17 +25,19 @@ import com.chenxin.spider.entity.Page;
  * 若使用代理，从ProxyPool中取
  * @see ProxyPool
  */
-public abstract class AbstractPageTask implements Runnable {
-	
+public abstract class AbstractPageTask implements Runnable{
 	private static Logger logger = Logger.getLogger(AbstractPageTask.class);
 	protected String url;
 	protected HttpRequestBase request;
 	protected boolean proxyFlag;//是否通过代理下载
-	private Proxy currentProxy; //当前线程使用的代理
+	private Proxy currentProxy;//当前线程使用的代理
 	//protected static ZhiHuDao1 zhiHuDao1;
 	protected static ZhiHuHttpClient zhiHuHttpClient = ZhiHuHttpClient.getInstance();
-	
+	//static {
+	//	zhiHuDao1 = getZhiHuDao1();
+	//}
 	public AbstractPageTask(){
+
 	}
 	public AbstractPageTask(String url, boolean proxyFlag){
 		this.url = url;
@@ -41,91 +47,128 @@ public abstract class AbstractPageTask implements Runnable {
 		this.request = request;
 		this.proxyFlag = proxyFlag;
 	}
-	
-	@Override
-	public void run() {
+	public void run(){
 		long requestStartTime = 0l;
 		HttpGet tempRequest = null;
-			try{
-				Page page = null;
-				if(url!=null){
-					if(proxyFlag){
-						tempRequest = new HttpGet(url);
-						currentProxy = ProxyPool.proxyQueue.take();
-						if(!(currentProxy instanceof Direct)){
-							HttpHost proxy = new HttpHost(currentProxy.getIp(),currentProxy.getPort());
-							tempRequest.setConfig(HttpClientUtil.getRequestConfigBuilder().setProxy(proxy).build());
-						}
-						requestStartTime = System.currentTimeMillis();
-						page = zhiHuHttpClient.getWebPage(tempRequest);
-					}else{
-						requestStartTime = System.currentTimeMillis();
-						page = zhiHuHttpClient.getWebPage(url);
+		try {
+			Page page = null;
+			if(url != null){
+				if (proxyFlag){
+					tempRequest = new HttpGet(url);
+					currentProxy = ProxyPool.proxyQueue.take();
+					if(!(currentProxy instanceof Direct)){
+						HttpHost proxy = new HttpHost(currentProxy.getIp(), currentProxy.getPort());
+						tempRequest.setConfig(HttpClientUtil.getRequestConfigBuilder().setProxy(proxy).build());
 					}
-				}else if(request!=null){
-					if(proxyFlag){
-						currentProxy = ProxyPool.proxyQueue.take();
-						if(!(currentProxy instanceof Direct)){
-							HttpHost proxy = new HttpHost(currentProxy.getIp(),currentProxy.getPort());
-							request.setConfig(HttpClientUtil.getRequestConfigBuilder().setProxy(proxy).build());
-						}
-						requestStartTime = System.currentTimeMillis();
-						page = zhiHuHttpClient.getWebPage(request);
-					}else{
-						requestStartTime = System.currentTimeMillis();
-						page = zhiHuHttpClient.getWebPage(request);
-					}
-				}
-				long requestEndTime = System.currentTimeMillis();
-				page.setProxy(currentProxy);
-				int status = page.getStatusCode();
-				String logStr = Thread.currentThread().getName() + " " + currentProxy +
-						"  executing request " + page.getUrl()  + " response statusCode:" + status +
-						"  request cost time:" + (requestEndTime - requestStartTime) + "ms";
-				
-				if(status==HttpStatus.SC_OK){
-					if(page.getHtml().contains("zhihu")){
-						logger.debug("zhihu");
-						currentProxy.setSuccessfulTimes(currentProxy.getSuccessfulTimes() + 1);
-						currentProxy.setSuccessfulTotalTime(currentProxy.getSuccessfulTotalTime() + (requestEndTime - requestStartTime));
-						double aTime = (currentProxy.getSuccessfulTotalTime() + 0.0) / currentProxy.getSuccessfulTimes();
-						currentProxy.setSuccessfulAverageTime(aTime);
-						currentProxy.setLastSuccessfulTime(System.currentTimeMillis());
-						handle(page);
-					}else{
-						/**
-						 * 代理异常，没有正确返回目标url
-						 */
-						logger.warn("proxy exception:" + currentProxy.toString());
-					}
-				}/**
-				 * 401--不能通过验证
-				 */
-				else if(status == 404 || status == 401 ||
-						status == 410){
-					logger.warn(logStr);
+					requestStartTime = System.currentTimeMillis();
+					page = zhiHuHttpClient.getWebPage(tempRequest);
 				}else {
-					logger.error(logStr);
-					Thread.sleep(100);
-					retry();
+					requestStartTime = System.currentTimeMillis();
+					page = zhiHuHttpClient.getWebPage(url);
 				}
-				
-				
-			}catch(InterruptedException e){
-				
-			} catch (IOException e) {
-				e.printStackTrace();
+			} else if(request != null){
+				if (proxyFlag){
+					currentProxy = ProxyPool.proxyQueue.take();
+					if(!(currentProxy instanceof Direct)) {
+						HttpHost proxy = new HttpHost(currentProxy.getIp(), currentProxy.getPort());
+						request.setConfig(HttpClientUtil.getRequestConfigBuilder().setProxy(proxy).build());
+					}
+					requestStartTime = System.currentTimeMillis();
+					page = zhiHuHttpClient.getWebPage(request);
+				}else {
+					requestStartTime = System.currentTimeMillis();
+					page = zhiHuHttpClient.getWebPage(request);
+				}
+			}
+			long requestEndTime = System.currentTimeMillis();
+			page.setProxy(currentProxy);
+			int status = page.getStatusCode();
+			String logStr = Thread.currentThread().getName() + " " + currentProxy +
+					"  executing request " + page.getUrl()  + " response statusCode:" + status +
+					"  request cost time:" + (requestEndTime - requestStartTime) + "ms";
+			if(status == HttpStatus.SC_OK){
+				if (page.getHtml().contains("zhihu")){
+					logger.debug(logStr);
+					currentProxy.setSuccessfulTimes(currentProxy.getSuccessfulTimes() + 1);
+					currentProxy.setSuccessfulTotalTime(currentProxy.getSuccessfulTotalTime() + (requestEndTime - requestStartTime));
+					double aTime = (currentProxy.getSuccessfulTotalTime() + 0.0) / currentProxy.getSuccessfulTimes();
+					currentProxy.setSuccessfulAverageTime(aTime);
+					currentProxy.setLastSuccessfulTime(System.currentTimeMillis());
+					handle(page);
+				}else {
+					/**
+					 * 代理异常，没有正确返回目标url
+					 */
+					logger.warn("proxy exception:" + currentProxy.toString());
+				}
+
+			}
+			/**
+			 * 401--不能通过验证
+			 */
+			else if(status == 404 || status == 401 ||
+					status == 410){
+				logger.warn(logStr);
+			}
+			else {
+				logger.error(logStr);
+				Thread.sleep(100);
+				retry();
+			}
+		} catch (InterruptedException e) {
+			logger.error("InterruptedException", e);
+		} catch (IOException e) {
+            if(currentProxy != null){
+                /**
+                 * 该代理可用，将该代理继续添加到proxyQueue
+                 */
+                currentProxy.setFailureTimes(currentProxy.getFailureTimes() + 1);
+            }
+            if(!zhiHuHttpClient.getDetailListPageThreadPool().isShutdown()){
+				retry();
+			}
+		} finally {
+			if (request != null){
+				request.releaseConnection();
+			}
+			if (tempRequest != null){
+				tempRequest.releaseConnection();
+			}
+			if (currentProxy != null && !ProxyUtil.isDiscardProxy(currentProxy)){
+				currentProxy.setTimeInterval(Constants.TIME_INTERVAL);
+				ProxyPool.proxyQueue.add(currentProxy);
 			}
 		}
-	
+	}
+
+	/**
+	 * retry
+	 */
 	abstract void retry();
+
+
+
 	/**
 	 * 子类实现page的处理
 	 * @param page
 	 */
 	abstract void handle(Page page);
-		
-		
-	
 
+	private String getProxyStr(Proxy proxy){
+		if (proxy == null){
+			return "";
+		}
+		return proxy.getIp() + ":" + proxy.getPort();
+	}
+	/**
+	 * 代理类，统计方法执行时间
+	 * @return
+	 */
+	/*private static ZhiHuDao1 getZhiHuDao1(){
+		ZhiHuDao1 zhiHuDao1 = new ZhiHuDao1Imp();
+		InvocationHandler invocationHandler = new SimpleInvocationHandler(zhiHuDao1);
+		ZhiHuDao1 proxyZhiHuDao1 = (ZhiHuDao1) java.lang.reflect.Proxy.newProxyInstance(zhiHuDao1.getClass().getClassLoader(),
+				zhiHuDao1.getClass().getInterfaces(), invocationHandler);
+		return proxyZhiHuDao1;
+	}*/
 }
